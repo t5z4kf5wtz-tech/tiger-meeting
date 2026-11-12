@@ -200,7 +200,7 @@ dialog::backdrop{background:#131c16a6}
 <div id="toast" role="status" hidden></div>
 <script>
 "use strict";
-const departments = ["EPM","PD","HWTE","RF","KPD","EE","SFA","IE","AAE"];
+const departments = ["EPM","PD","HWTE","RF","KPD","EE","SFA","IE","AAE","QA","MFG","TE"];
 const statuses = {unmarked:"未點名",present:"出席",leave:"請假",absent:"缺席"};
 const actionStates = {open:"待處理",progress:"進行中",done:"已完成"};
 const storageKey = "tiger-meeting-workspace-v1";
@@ -230,6 +230,10 @@ function loadState() {
     if (saved) {
       const data = JSON.parse(saved);
       if (!data.roster || !data.meetings?.some(meeting => meeting.id === data.activeId)) throw Error("Invalid record");
+      for (const department of departments) {
+        data.roster[department] ??= [];
+        for (const meeting of data.meetings) meeting.people[department] ??= [];
+      }
       return data;
     }
   } catch {
