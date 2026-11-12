@@ -82,7 +82,7 @@ h3{font-size:15px}
 .pill span{color:#68766b;font-size:11px;margin-left:5px}
 .pill[aria-pressed=true]{background:#e6eee5;border-color:#b8ccbb;color:#1e4e36}
 .pill:hover{border-color:#98b39c}
-.roster-list{display:grid;gap:10px;margin-top:13px}
+.roster-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));align-items:start;gap:12px;margin-top:13px}
 .roster-group{border:1px solid var(--line);border-radius:11px;overflow:hidden;min-width:0}
 .roster-head{background:#f7f8f5;padding:9px 12px;flex-wrap:wrap;gap:7px 12px}
 .roster-head .btn{min-height:33px;padding:5px 9px;font-size:12px}
@@ -92,7 +92,7 @@ h3{font-size:15px}
 .empty{display:grid;place-items:center;text-align:center;background:#f7f8f5;border:1px dashed #d9e2d7;border-radius:11px;padding:21px 12px;margin-top:12px;gap:6px}
 .empty strong{font-size:14px}
 .empty .btn{margin-top:5px}
-.person{display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:1px solid #edf0eb;padding:9px 0}
+.person{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 14px;border-bottom:1px solid #edf0eb;padding:9px 0}
 .person:last-child{border-bottom:0}
 .person-name{display:flex;align-items:center;gap:9px;overflow-wrap:anywhere;min-width:0}
 .avatar{display:grid;place-items:center;width:29px;height:29px;border-radius:50%;background:#eaf0e8;color:#2a5138;font-weight:700;flex:none}
