@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#161b17">
+<title>猛虎攻堅｜會議管理</title>
+<style>
+:root{color-scheme:light;--ink:#1c231e;--muted:#626d63;--line:#e4e8e1;--paper:#fff;--bg:#f4f5f0;--green:#234936;--orange:#f5aa64;--sidebar:#171e19;--radius:16px}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;color:var(--ink);background:var(--bg);font:14px/1.55 "Inter","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid #23704e;outline-offset:3px}
+a{color:inherit;text-decoration:none}
+.shell{display:grid;grid-template-columns:246px minmax(0,1fr);min-height:100vh}
+.sidebar{background:var(--sidebar);color:#f0f3eb;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:28px 18px 20px}
+.brand{display:flex;align-items:center;gap:12px;padding:0 8px 27px}
+.brand strong{display:block;font-size:20px;letter-spacing:.07em}
+.brand small{display:block;font-size:10px;letter-spacing:.16em;color:#aebbb0;font-weight:650}
+.mark{display:grid;place-items:center;width:42px;height:42px;background:var(--orange);border-radius:12px;flex:none}
+.claws{width:22px;height:19px;display:flex;gap:3px;transform:skewX(-24deg) rotate(-13deg)}
+.claws i{width:5px;background:#221e18;clip-path:polygon(0 9%,100% 0,72% 82%,8% 100%)}
+.claws i:nth-child(2){transform:translateY(-2px)}
+.nav{display:grid;gap:4px}
+.nav a,.history button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:10px 11px;border-radius:9px;color:#c3cec4;border:1px solid transparent;background:none}
+.nav a:hover,.history button:hover{background:#263229;color:white}
+.nav a[aria-current="location"]{background:#2b392f;color:#f2f5ef}
+.nav-symbol{color:#a1b7a5;width:20px;text-align:center;font-size:16px}
+.side-heading{margin:26px 9px 8px;color:#aebbb0;font-size:11px;letter-spacing:.12em;font-weight:700}
+.history{overflow:auto;min-height:0;display:grid;align-content:start;gap:4px}
+.history button{display:block;line-height:1.35}
+.history button[aria-current=true]{border-color:#4b5a4d;background:#2c3830;color:white}
+.history button strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.history button small{font-size:11px;color:#b3c1b5}
+.side-footer{margin-top:auto;padding:16px 8px 0;color:#b7c5b8;font-size:11px}
+.side-footer::before{content:"";display:inline-block;background:#9ec5a5;width:7px;height:7px;border-radius:50%;margin-right:8px}
+.side-footer.error::before{background:#f09381}
+main{min-width:0}
+.workspace{max-width:1440px;margin:0 auto;padding:29px clamp(20px,3.4vw,55px) 50px}
+.toolbar,.section-head,.roster-head,.history-head,.modal-head{display:flex;justify-content:space-between;align-items:center;gap:14px}
+.toolbar{margin-bottom:23px}
+.breadcrumb{font-size:13px;color:var(--muted);font-weight:620}
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+.btn{min-height:39px;padding:8px 13px;border:1px solid #dbe2d9;border-radius:9px;background:#fff;font-weight:650;font-size:13px;white-space:nowrap}
+.btn:hover{background:#eef2eb}
+.btn.primary{background:var(--green);color:white;border-color:var(--green)}
+.btn.primary:hover{background:#173c2a}
+.btn.danger{color:#a23629}
+.btn:disabled{opacity:.5;cursor:default}
+.icon{font-size:15px;margin-right:5px}
+.hero{position:relative;overflow:hidden;isolation:isolate;background:linear-gradient(110deg,#172a20,#233d2e 72%,#294937);color:white;border-radius:20px;padding:29px clamp(20px,3vw,36px) 30px}
+.hero::before,.hero::after{content:"";position:absolute;pointer-events:none;z-index:-1}
+.hero::before{right:-35px;top:-155px;width:440px;height:510px;background:repeating-linear-gradient(133deg,transparent 0 31px,#a3c5ab 32px 33px,transparent 34px 54px);opacity:.19;transform:rotate(-8deg);mask-image:linear-gradient(90deg,transparent,#000)}
+.hero::after{right:42px;top:-47px;width:315px;height:365px;background:linear-gradient(150deg,#f5aa64,#c47c42);opacity:.61;clip-path:polygon(2% 69%,53% 16%,100% 0,73% 25%,27% 61%,55% 37%,93% 25%,62% 49%,11% 89%,33% 61%,2% 79%,42% 34%,13% 64%)}
+.hero h1{margin:0 0 21px;font-size:clamp(29px,3.3vw,44px);letter-spacing:.04em;line-height:1.12}
+.hero-fields{display:grid;grid-template-columns:minmax(180px,1.7fr) minmax(142px,1fr) minmax(100px,.7fr);gap:10px;max-width:620px}
+label span,.field-label{display:block;font-size:12px;font-weight:650;margin-bottom:5px}
+.hero label span{color:#d3e1d4}
+input,textarea,select{width:100%;min-width:0;border:1px solid #d9e0d6;background:#fff;border-radius:8px;padding:9px 10px}
+.hero input{background:#17271fdc;border:1px solid #5b7061;color:#fff;color-scheme:dark}
+.hero input::placeholder{color:#b6c5b9}
+.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin:17px 0 26px}
+.metric{background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px 16px;display:flex;align-items:center;gap:12px}
+.metric-icon{display:grid;place-items:center;width:35px;height:35px;flex:none;border-radius:10px;font-size:17px;font-weight:700}
+.total .metric-icon{background:#edf0eb;color:#3c4c41}
+.present .metric-icon{background:#e6f3e9;color:#286241}
+.leave .metric-icon{background:#fff2da;color:#905311}
+.absent .metric-icon{background:#f9e9e6;color:#983d34}
+.metric span{display:block;color:var(--muted);font-size:12px}
+.metric strong{font-size:23px;line-height:1.2;font-variant-numeric:tabular-nums}
+.panel{border:1px solid var(--line);border-radius:var(--radius);background:#fff;padding:21px 22px;margin-bottom:18px;min-width:0}
+h2,h3,p{margin:0}
+h2{font-size:20px;letter-spacing:.01em}
+h3{font-size:15px}
+.subtle{font-size:12px;color:var(--muted)}
+.section-head{margin-bottom:16px}
+.section-head p{margin-top:3px}
+.pills{display:flex;gap:6px;flex-wrap:wrap;padding-bottom:13px;border-bottom:1px solid var(--line)}
+.pill{border:1px solid #e5eae3;border-radius:8px;background:#f7f8f5;padding:6px 10px;font-size:12px;font-weight:700;min-height:34px}
+.pill span{color:#68766b;font-size:11px;margin-left:5px}
+.pill[aria-pressed=true]{background:#e6eee5;border-color:#b8ccbb;color:#1e4e36}
+.pill:hover{border-color:#98b39c}
+.roster-list{display:grid;gap:10px;margin-top:13px}
+.roster-group{border:1px solid var(--line);border-radius:11px;overflow:hidden;min-width:0}
+.roster-head{background:#f7f8f5;padding:9px 12px;flex-wrap:wrap;gap:7px 12px}
+.roster-head .btn{min-height:33px;padding:5px 9px;font-size:12px}
+.roster-body{padding:0 12px}
+.roster-empty{padding:9px 12px;border-top:1px solid var(--line)}
+.roster-head h3 span{font-size:12px;color:var(--muted);font-weight:500;margin-left:8px}
+.empty{display:grid;place-items:center;text-align:center;background:#f7f8f5;border:1px dashed #d9e2d7;border-radius:11px;padding:21px 12px;margin-top:12px;gap:6px}
+.empty strong{font-size:14px}
+.empty .btn{margin-top:5px}
+.person{display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:1px solid #edf0eb;padding:9px 0}
+.person:last-child{border-bottom:0}
+.person-name{display:flex;align-items:center;gap:9px;overflow-wrap:anywhere;min-width:0}
+.avatar{display:grid;place-items:center;width:29px;height:29px;border-radius:50%;background:#eaf0e8;color:#2a5138;font-weight:700;flex:none}
+.statuses{display:flex;gap:4px;flex-wrap:wrap}
+.status{padding:4px 8px;border:1px solid #dce3d9;background:#fff;border-radius:7px;font-size:12px;white-space:nowrap}
+.status:hover{background:#f0f3ee}
+.status[aria-pressed=true]{background:#e9eeea;border-color:#b2c1b5;font-weight:700}
+.status[data-state=present][aria-pressed=true]{background:#e2f3e7;border-color:#a5cdb0;color:#235c36}
+.status[data-state=leave][aria-pressed=true]{background:#fff0d6;border-color:#ecd39f;color:#7b4a09}
+.status[data-state=absent][aria-pressed=true]{background:#fae8e5;border-color:#e5b9b1;color:#8a3027}
+textarea{resize:vertical;min-height:98px;display:block}
+.action-list{display:grid;gap:10px}
+.action{padding:13px;border:1px solid var(--line);border-radius:11px;background:#f7f8f5}
+.action-fields{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(82px,.85fr) minmax(0,2.45fr) minmax(0,1fr) minmax(0,1.2fr) auto;gap:9px;align-items:end}
+.remove{height:41px;width:36px;border:1px solid #e5dedb;border-radius:8px;background:white;color:#984538;font-size:19px}
+.remove:hover{background:#fae9e5}
+.danger-link{display:inline-block;color:#963b31;background:none;border:0;padding:7px 0;font-size:12px;text-decoration:underline;text-underline-offset:3px}
+dialog{border:1px solid #dce4da;border-radius:17px;width:min(520px,calc(100vw - 26px));padding:20px 22px;color:var(--ink);box-shadow:0 20px 80px #1115;max-height:90dvh;overflow:auto}
+dialog::backdrop{background:#131c16a6}
+.modal-head{margin-bottom:12px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}
+.edit-roster{display:grid;gap:7px;margin:12px 0}
+.edit-row{display:grid;grid-template-columns:minmax(0,1fr) 36px;gap:8px}
+#bulk{min-height:73px}
+#toast{position:fixed;z-index:3;bottom:19px;right:19px;padding:11px 15px;background:#1f3528;color:#fff;border-radius:9px;box-shadow:0 5px 20px #2223}
+[hidden]{display:none!important}
+@media(max-width:1100px){.action-fields{grid-template-columns:repeat(3,minmax(0,1fr))}.action-fields .remove{justify-self:end}}
+@media(max-width:820px){.shell{grid-template-columns:1fr}.sidebar{position:static;height:auto;padding:15px 18px;display:grid;grid-template-columns:1fr auto;gap:8px}.brand{padding:0}.nav{display:none}.side-heading{margin:0;align-self:center;grid-row:1;grid-column:2}.history{grid-column:1/-1;display:flex}.history button{width:auto;max-width:190px;flex:none}.side-footer{grid-column:1/-1;margin:0;padding:0}.workspace{padding-top:19px}.hero::after{right:-50px;opacity:.38}}
+@media(max-width:520px){.workspace{padding:15px 11px 28px}.toolbar{margin-bottom:13px;flex-wrap:wrap}.hero{padding:23px 14px}.hero-fields{grid-template-columns:1fr 1fr}.hero-fields label:first-child{grid-column:1/-1}.summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:10px 0 16px}.metric{padding:9px;gap:8px}.panel{padding:14px}.person{align-items:flex-start;flex-direction:column;gap:6px}.action-fields{grid-template-columns:1fr 1fr}.action-fields label:nth-child(3){grid-column:1/-1}.action-fields .remove{justify-self:end}.roster-head{align-items:flex-start}.roster-head h3 span{display:block;margin-left:0}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand"><div class="mark" aria-hidden="true"><div class="claws"><i></i><i></i><i></i></div></div><div><strong>猛虎攻堅</strong><small>MEETING WORKSPACE</small></div></div>
+    <nav class="nav" aria-label="會議區段">
+      <a href="#meeting" aria-current="location"><span class="nav-symbol" aria-hidden="true">◫</span>會議總覽</a>
+      <a href="#attendance"><span class="nav-symbol" aria-hidden="true">✓</span>部門點名</a>
+      <a href="#takeaways"><span class="nav-symbol" aria-hidden="true">≡</span>會議重點</a>
+      <a href="#actions"><span class="nav-symbol" aria-hidden="true">↗</span>Action Items</a>
+    </nav>
+    <div class="side-heading" id="history-label">會議紀錄</div>
+    <div class="history" id="history" aria-labelledby="history-label"></div>
+    <div class="side-footer" id="save-state" role="status">儲存於此瀏覽器</div>
+  </aside>
+  <main>
+    <div class="workspace">
+      <div class="toolbar">
+        <div class="breadcrumb">會議管理 <span aria-hidden="true">／</span> 工作台</div>
+        <div class="controls">
+          <button type="button" class="btn" id="new-meeting"><span class="icon" aria-hidden="true">＋</span>新增會議</button>
+          <button type="button" class="btn" id="download"><span class="icon" aria-hidden="true">↓</span>下載 HTML 摘要</button>
+          <button type="button" class="btn primary" id="download-excel"><span class="icon" aria-hidden="true">↓</span>下載 Excel 總覽</button>
+        </div>
+      </div>
+      <section class="hero" id="meeting" aria-labelledby="meeting-heading">
+        <h1 id="meeting-heading">會議總覽</h1>
+        <div class="hero-fields">
+          <label><span>會議名稱</span><input id="meeting-title" placeholder="輸入會議名稱" maxlength="120" autocomplete="off"></label>
+          <label><span>日期</span><input id="meeting-date" type="date"></label>
+          <label><span>時間</span><input id="meeting-time" type="time"></label>
+        </div>
+      </section>
+      <div class="summary" aria-label="點名統計">
+        <div class="metric total"><div class="metric-icon" aria-hidden="true">∑</div><div><span>應到</span><strong id="count-total">0</strong></div></div>
+        <div class="metric present"><div class="metric-icon" aria-hidden="true">✓</div><div><span>出席</span><strong id="count-present">0</strong></div></div>
+        <div class="metric leave"><div class="metric-icon" aria-hidden="true">↗</div><div><span>請假</span><strong id="count-leave">0</strong></div></div>
+        <div class="metric absent"><div class="metric-icon" aria-hidden="true">×</div><div><span>缺席</span><strong id="count-absent">0</strong></div></div>
+      </div>
+      <section class="panel" id="attendance" aria-labelledby="attendance-heading">
+        <div class="section-head">
+          <div><h2 id="attendance-heading">部門點名</h2><p class="subtle" id="unmarked"></p></div>
+        </div>
+        <div class="pills" id="departments" role="group" aria-label="部門"></div>
+        <div class="roster-list" id="people"></div>
+      </section>
+      <section class="panel" id="takeaways" aria-labelledby="takeaways-heading">
+        <div class="section-head"><h2 id="takeaways-heading">會議重點</h2></div>
+        <textarea id="notes" aria-label="會議重點" placeholder="記下 Key Takeaways、已確認的決策與待釐清的風險。"></textarea>
+      </section>
+      <section class="panel" id="actions" aria-labelledby="actions-heading">
+        <div class="section-head"><h2 id="actions-heading">Action Items</h2><button type="button" class="btn primary" id="add-action"><span class="icon" aria-hidden="true">＋</span>新增 Action</button></div>
+        <div class="action-list" id="action-list"></div>
+      </section>
+      <button class="danger-link" type="button" id="delete-meeting">刪除這場會議</button>
+    </div>
+  </main>
+</div>
+<dialog id="roster-dialog" aria-labelledby="dialog-title">
+  <form id="roster-form">
+    <div class="modal-head"><h2 id="dialog-title"></h2><button type="button" class="remove" id="close-roster" aria-label="關閉">×</button></div>
+    <p class="subtle">名單變更會套用到這場會議與之後新增的會議。</p>
+    <div id="roster-editor" class="edit-roster"></div>
+    <label><span>新增成員</span><textarea id="bulk" placeholder="輸入姓名，每行一位"></textarea></label>
+    <div class="modal-actions"><button type="button" class="btn" id="cancel-roster">取消</button><button type="submit" class="btn primary">儲存名單</button></div>
+  </form>
+</dialog>
+<dialog id="confirm-dialog" aria-labelledby="confirm-title">
+  <form method="dialog">
+    <div class="modal-head"><h2 id="confirm-title"></h2></div>
+    <p id="confirm-text"></p>
+    <div class="modal-actions"><button class="btn" value="cancel" autofocus>取消</button><button class="btn danger" value="confirm" id="confirm-ok">確認</button></div>
+  </form>
+</dialog>
+<div id="toast" role="status" hidden></div>
+<script>
+"use strict";
+const departments = ["EPM","PD","HWTE","RF","KPD","EE","SFA","IE","AAE"];
+const statuses = {unmarked:"未點名",present:"出席",leave:"請假",absent:"缺席"};
+const actionStates = {open:"待處理",progress:"進行中",done:"已完成"};
+const storageKey = "tiger-meeting-workspace-v1";
+const byId = id => document.getElementById(id);
+const uid = () => globalThis.crypto?.randomUUID?.() ?? Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
+const localDate = () => {
+  const now = new Date();
+  return [now.getFullYear(),now.getMonth()+1,now.getDate()].map(part => String(part).padStart(2,"0")).join("-");
+};
+function makeMeeting(roster) {
+  return {
+    id:uid(),title:"",date:localDate(),time:"",notes:"",actions:[],
+    people:Object.fromEntries(departments.map(department => [
+      department, roster[department].map(person => ({...person,status:"unmarked"}))
+    ]))
+  };
+}
+function initialState() {
+  const roster = Object.fromEntries(departments.map(department => [department,[]]));
+  const firstMeeting = makeMeeting(roster);
+  return {roster,meetings:[firstMeeting],activeId:firstMeeting.id};
+}
+let loadError = false;
+function loadState() {
+  try {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      const data = JSON.parse(saved);
+      if (!data.roster || !data.meetings?.some(meeting => meeting.id === data.activeId)) throw Error("Invalid record");
+      return data;
+    }
+  } catch {
+    loadError = true;
+  }
+  return initialState();
+}
+const state = loadState();
+let departmentFilter = "";
+let toastTimer;
+const current = () => state.meetings.find(meeting => meeting.id === state.activeId);
+const titleOf = meeting => meeting.title.trim() || "未命名會議";
+function save() {
+  const indicator = byId("save-state");
+  try {
+    localStorage.setItem(storageKey,JSON.stringify(state));
+    indicator.textContent = "已儲存於此瀏覽器";
+    indicator.classList.remove("error");
+  } catch {
+    indicator.textContent = "瀏覽器無法儲存，請下載摘要";
+    indicator.classList.add("error");
+  }
+}
+function notify(message) {
+  const toast = byId("toast");
+  toast.textContent = message;
+  toast.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.hidden = true,2500);
+}
+function node(tag,className,value) {
+  const element = document.createElement(tag);
+  if (className) element.className = className;
+  if (value !== undefined) element.textContent = value;
+  return element;
+}
+function button(label,className,handler) {
+  const element = node("button",className,label);
+  element.type = "button";
+  element.addEventListener("click",handler);
+  return element;
+}
+function counts(meeting) {
+  const totals = {total:0,unmarked:0,present:0,leave:0,absent:0};
+  for (const department of departments) {
+    for (const person of meeting.people[department]) {
+      totals.total++;
+      totals[person.status]++;
+    }
+  }
+  return totals;
+}
+function renderHistory() {
+  byId("history").replaceChildren(...state.meetings.map(meeting => {
+    const item = button("","",() => {
+      state.activeId = meeting.id;
+      save();
+      render();
+      window.scrollTo({top:0});
+    });
+    item.setAttribute("aria-current",String(meeting.id === state.activeId));
+    item.append(node("strong","",titleOf(meeting)),node("small","",meeting.date || "未填日期"));
+    return item;
+  }));
+}
+function renderAttendanceStats(meeting) {
+  const stats = counts(meeting);
+  for (const key of ["total","present","leave","absent"]) byId("count-"+key).textContent = stats[key];
+  byId("unmarked").textContent = "全體未點名 " + stats.unmarked + " 人";
+  return stats;
+}
+function renderAttendance() {
+  const meeting = current();
+  const stats = renderAttendanceStats(meeting);
+  const filters = ["",...departments];
+  byId("departments").replaceChildren(...filters.map((department,index) => {
+    const tab = button(department || "全部部門","pill",() => {
+      departmentFilter = department;
+      renderAttendance();
+      byId("departments").children[index].focus();
+    });
+    tab.setAttribute("aria-pressed",String(department === departmentFilter));
+    const total = department ? meeting.people[department].length : stats.total;
+    tab.append(node("span","",total));
+    return tab;
+  }));
+  const visibleDepartments = departmentFilter ? [departmentFilter] : departments;
+  byId("people").replaceChildren(...visibleDepartments.map(department => renderDepartment(meeting,department)));
+}
+function renderDepartment(meeting,department) {
+  const people = meeting.people[department];
+  const section = node("section","roster-group");
+  section.setAttribute("aria-label",department + " 點名");
+  const header = node("div","roster-head");
+  const title = node("h3","",department);
+  title.append(node("span","",people.length + " 位成員"));
+  const controls = node("div","controls");
+  const edit = button(people.length ? "編輯名單" : "加入成員","btn",() => openRoster(department));
+  edit.id = "edit-roster-" + department;
+  edit.setAttribute("aria-label",department + " " + edit.textContent);
+  if (people.length) {
+    const mark = button("未點名設為出席","btn",() => markDepartmentPresent(department));
+    mark.id = "mark-present-" + department;
+    mark.setAttribute("aria-label",department + " 未點名設為出席");
+    controls.append(mark);
+  }
+  controls.append(edit);
+  header.append(title,controls);
+  section.append(header);
+  if (!people.length) {
+    section.append(node("p","roster-empty subtle","尚未建立名單"));
+    return section;
+  }
+  const body = node("div","roster-body");
+  body.append(...people.map(person => {
+    const row = node("div","person");
+    const name = node("div","person-name");
+    const avatar = node("span","avatar",Array.from(person.name)[0]);
+    avatar.setAttribute("aria-hidden","true");
+    name.append(avatar,node("strong","",person.name));
+    const group = node("div","statuses");
+    group.setAttribute("role","group");
+    group.setAttribute("aria-label",person.name + " 出席狀態");
+    for (const [key,label] of Object.entries(statuses)) {
+      const choice = button(label,"status",() => {
+        person.status = key;
+        save();
+        for (const option of group.children) option.setAttribute("aria-pressed",String(option === choice));
+        renderAttendanceStats(meeting);
+      });
+      choice.dataset.state = key;
+      choice.setAttribute("aria-pressed",String(person.status === key));
+      group.append(choice);
+    }
+    row.append(name,group);
+    return row;
+  }));
+  section.append(body);
+  return section;
+}
+function openRoster(department) {
+  const dialog = byId("roster-dialog");
+  dialog.dataset.department = department;
+  byId("dialog-title").textContent = department + " 部門名單";
+  byId("bulk").value = "";
+  byId("roster-editor").replaceChildren(...current().people[department].map(person => {
+    const row = node("div","edit-row");
+    const name = node("input");
+    name.value = person.name;
+    name.maxLength = 80;
+    name.dataset.personId = person.id;
+    name.setAttribute("aria-label","編輯姓名 " + person.name);
+    const remove = button("×","remove",() => row.remove());
+    remove.setAttribute("aria-label","移除 " + person.name);
+    row.append(name,remove);
+    return row;
+  }));
+  dialog.showModal();
+  const firstName = byId("roster-editor").querySelector("input");
+  (firstName || byId("bulk")).focus();
+}
+byId("roster-form").addEventListener("submit",event => {
+  event.preventDefault();
+  const department = byId("roster-dialog").dataset.department;
+  const meeting = current();
+  const previous = meeting.people[department];
+  const inputs = [...byId("roster-editor").querySelectorAll("input")];
+  const names = new Map(inputs.map(input => [input.dataset.personId,input.value.trim()]).filter(([,name]) => name));
+  const removedIds = new Set(previous.filter(person => !names.has(person.id)).map(person => person.id));
+  const added = byId("bulk").value.split(/\r?\n/).map(name => name.trim()).filter(Boolean)
+    .map(name => ({id:uid(),name}));
+  meeting.people[department] = [
+    ...previous.filter(person => names.has(person.id)).map(person => ({...person,name:names.get(person.id)})),
+    ...added.map(person => ({...person,status:"unmarked"}))
+  ];
+  state.roster[department] = [
+    ...state.roster[department].filter(person => !removedIds.has(person.id))
+      .map(person => ({...person,name:names.get(person.id) ?? person.name})),
+    ...added
+  ];
+  save();
+  byId("roster-dialog").close();
+  renderAttendance();
+  byId("edit-roster-" + department).focus();
+  notify(department + " 名單已更新");
+});
+function field(label,control) {
+  const wrapper = node("label");
+  wrapper.append(node("span","",label),control);
+  return wrapper;
+}
+const checkpoint = action => action.cp ?? action.due ?? "";
+function renderActions() {
+  const meeting = current();
+  const list = byId("action-list");
+  if (!meeting.actions.length) {
+    const empty = node("div","empty");
+    empty.append(node("strong","","尚無 Action Item"),node("span","subtle","新增待辦事項並指定 DRI 與 CP。"));
+    list.replaceChildren(empty);
+    return;
+  }
+  list.replaceChildren(...meeting.actions.map((action,index) => {
+    const row = node("div","action");
+    const fields = node("div","action-fields");
+    const textField = (label,key,placeholder,value = action[key] ?? "") => {
+      const input = node("input");
+      input.value = value;
+      input.placeholder = placeholder;
+      input.addEventListener("input",() => {action[key] = input.value;save();});
+      return field(label,input);
+    };
+    const select = node("select");
+    for (const [key,label] of Object.entries(actionStates)) {
+      const option = node("option","",label);
+      option.value = key;
+      select.append(option);
+    }
+    select.value = action.status;
+    select.addEventListener("change",() => {action.status = select.value;save();});
+    const remove = button("×","remove",() => confirmAction("刪除 Action Item","這項待辦會從此會議移除。","刪除",() => {
+      meeting.actions = meeting.actions.filter(item => item.id !== action.id);
+      save();
+      renderActions();
+      byId("add-action").focus();
+    }));
+    remove.setAttribute("aria-label","刪除第 " + (index+1) + " 項待辦");
+    fields.append(
+      textField("項目","topic","如：Build Readiness"),
+      field("Status",select),
+      textField("Action item","task","如：確認物料到位日"),
+      textField("DRI","owner","負責人"),
+      textField("CP","cp","日期或檢查節點",checkpoint(action)),
+      remove
+    );
+    row.append(fields);
+    return row;
+  }));
+}
+function render() {
+  const meeting = current();
+  byId("meeting-title").value = meeting.title;
+  byId("meeting-date").value = meeting.date;
+  byId("meeting-time").value = meeting.time;
+  byId("notes").value = meeting.notes;
+  renderHistory();
+  renderAttendance();
+  renderActions();
+}
+function confirmAction(title,detail,label,action) {
+  const dialog = byId("confirm-dialog");
+  byId("confirm-title").textContent = title;
+  byId("confirm-text").textContent = detail;
+  byId("confirm-ok").textContent = label;
+  dialog.returnValue = "";
+  dialog.addEventListener("close",() => {
+    if (dialog.returnValue === "confirm") action();
+  },{once:true});
+  dialog.showModal();
+}
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g,char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+}
+const actionHeaders = ["項目","Status","Action item","DRI","CP"];
+function meetingActionRows(meeting) {
+  return meeting.actions.flatMap(action => {
+    const fields = [(action.topic ?? "").trim(),action.task.trim(),action.owner.trim(),checkpoint(action).trim()];
+    if (!fields.some(Boolean) && action.status === "open") return [];
+    const [topic,task,owner,cp] = fields;
+    return [[topic,actionStates[action.status],task,owner,cp]];
+  });
+}
+function meetingSummary(meeting) {
+  const escape = escapeHtml;
+  const title = escape(titleOf(meeting));
+  const stats = counts(meeting);
+  const attendanceRows = departments.map(department => {
+    const people = meeting.people[department];
+    if (!people.length) return '<tr><th scope="row">'+department+'</th><td colspan="4">尚無成員</td></tr>';
+    const cells = Object.keys(statuses).filter(key => key !== "unmarked").concat("unmarked").map(key => {
+      const names = people.filter(person => person.status === key).map(person => escape(person.name));
+      return "<td>"+(names.join("<br>") || "—")+"</td>";
+    });
+    return '<tr><th scope="row">'+department+"</th>"+cells.join("")+"</tr>";
+  }).join("");
+  const actionRows = meetingActionRows(meeting).map(row =>
+    "<tr>"+row.map(value => "<td>"+escape(value || "—")+"</td>").join("")+"</tr>"
+  ).join("");
+  return `<!doctype html>
+<html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${title}｜猛虎攻堅會議摘要</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f5f0;color:#192820;font:14px/1.55 system-ui,sans-serif}
+main{max-width:960px;margin:0 auto;padding:30px 16px 45px}header,section{padding:18px 20px;border:1px solid #dce4da;border-radius:12px;background:#fff;margin-bottom:14px}
+header{background:#234936;color:#fff}h1{font-size:27px;margin:4px 0;overflow-wrap:anywhere}h2{font-size:18px;margin:0 0 10px}
+p{margin:4px 0}.notes{white-space:pre-wrap;overflow-wrap:anywhere}.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;vertical-align:top;border-bottom:1px solid #e3e8e2;padding:8px 10px;overflow-wrap:anywhere}
+thead{background:#e8efe7}th{white-space:nowrap}.print{float:right;border:1px solid #afc4b3;color:#fff;background:transparent;padding:6px 9px;border-radius:6px;cursor:pointer}
+@media print{body{background:#fff}.print{display:none}main{padding:0}section,header{break-inside:auto}tr{break-inside:avoid}header{color:#192820;background:#fff}.table-wrap{overflow:visible}}
+</style>
+<main>
+<header><button class="print" type="button" onclick="window.print()">列印／存成 PDF</button><p>猛虎攻堅｜會議摘要</p><h1>${title}</h1><p>${escape(meeting.date || "未填日期")}${meeting.time ? "　"+escape(meeting.time) : ""}</p></header>
+<section><h2>出席紀錄</h2><p>應到 ${stats.total}　出席 ${stats.present}　請假 ${stats.leave}　缺席 ${stats.absent}　未點名 ${stats.unmarked}</p>
+<div class="table-wrap"><table><thead><tr><th>部門</th><th>出席</th><th>請假</th><th>缺席</th><th>未點名</th></tr></thead><tbody>${attendanceRows}</tbody></table></div></section>
+<section><h2>會議重點</h2><p class="notes">${escape(meeting.notes.trim() || "未填寫")}</p></section>
+<section><h2>Action Items</h2>${actionRows ? '<div class="table-wrap"><table><thead><tr>'+actionHeaders.map(label => '<th>'+label+'</th>').join('')+'</tr></thead><tbody>'+actionRows+"</tbody></table></div>" : "<p>無待辦事項</p>"}</section>
+</main></html>`;
+}
+const sheetNamespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+const officeRelationships = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+const packageRelationships = "http://schemas.openxmlformats.org/package/2006/relationships";
+const xlsxMime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+function workbookSheets(meeting) {
+  const attendanceKeys = ["present","leave","absent","unmarked"];
+  const stats = counts(meeting);
+  const overview = [
+    {cells:["猛虎攻堅｜會議總覽"],style:1,merge:true,height:32},
+    {cells:[titleOf(meeting)],style:3,merge:true,height:30},
+    {cells:["日期",meeting.date,"時間",meeting.time]},
+    {cells:[]},
+    {cells:["部門","應到",...attendanceKeys.map(key => statuses[key])],style:1,height:24},
+    {cells:["合計",stats.total,...attendanceKeys.map(key => stats[key])],style:3,height:24},
+    ...departments.map(department => {
+      const people = meeting.people[department];
+      return {cells:[department,people.length,...attendanceKeys.map(key => people.filter(person => person.status === key).length)]};
+    }),
+    {cells:[]},
+    {cells:["會議重點"],style:1,merge:true,height:24},
+    ...(meeting.notes.trim() || "未填寫").split(/\r?\n/).flatMap(line =>
+      (line.match(/[\s\S]{1,350}/gu) || [""]).map(part => ({
+        cells:[part],merge:true,height:Math.max(21,Math.ceil(textWidth(part)/108)*17+6)
+      }))
+    )
+  ];
+  const attendance = departments.flatMap(department =>
+    meeting.people[department].map(person => ({cells:[department,person.name,statuses[person.status]]}))
+  );
+  const actions = meetingActionRows(meeting).map(cells => ({cells}));
+  const makeDetail = (name,headers,rows,widths) => ({
+    name,widths,filter:true,rows:[{cells:headers,style:1,height:25},...rows]
+  });
+  return [
+    {name:"會議總覽",widths:[21,20,17,19,17,17],rows:overview},
+    makeDetail("出席明細",["部門","姓名","出席狀態"],attendance,[17,34,20]),
+    makeDetail("Action Items",actionHeaders,actions,[25,15,60,22,25])
+  ];
+}
+
+function textWidth(value) {
+  return Array.from(value).reduce((width,char) => width + (char.codePointAt(0) > 255 ? 2 : 1),0);
+}
+function xmlText(value) {
+  const valid = String(value).replace(/[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/gu,"");
+  return escapeHtml(valid.replace(/_x[0-9a-f]{4}_/gi,token => "_x005F_" + token.slice(1))).replace(/\r/g,"&#13;");
+}
+function sheetXml(sheet) {
+  const lastColumn = String.fromCharCode(64 + sheet.widths.length);
+  const merges = [];
+  const rows = sheet.rows.map(({cells,style = 2,height,merge},index) => {
+    const number = index + 1;
+    if (merge) merges.push(`A${number}:${lastColumn}${number}`);
+    const values = cells.map((value,column) => {
+      const address = String.fromCharCode(65 + column) + number;
+      return typeof value === "number"
+        ? `<c r="${address}" s="${style}"><v>${value}</v></c>`
+        : `<c r="${address}" s="${style}" t="inlineStr"><is><t xml:space="preserve">${xmlText(value)}</t></is></c>`;
+    }).join("");
+    const lines = Math.max(1,...cells.map((value,column) => String(value).split("\n").reduce(
+      (count,line) => count + Math.max(1,Math.ceil(textWidth(line)/(sheet.widths[column]-2))),0
+    )));
+    const rowHeight = height ?? Math.min(409,Math.max(20,lines*16+5));
+    return `<row r="${number}" ht="${rowHeight}" customHeight="1">${values}</row>`;
+  }).join("");
+  const columns = sheet.widths.map((width,index) => `<col min="${index+1}" max="${index+1}" width="${width}" customWidth="1"/>`).join("");
+  const pane = sheet.filter ? '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A2" sqref="A2"/>' : "";
+  const filter = sheet.filter ? `<autoFilter ref="A1:${lastColumn}${sheet.rows.length}"/>` : "";
+  const mergeCells = merges.length ? `<mergeCells count="${merges.length}">${merges.map(range => `<mergeCell ref="${range}"/>`).join("")}</mergeCells>` : "";
+  return `<worksheet xmlns="${sheetNamespace}"><sheetViews><sheetView workbookViewId="0" showGridLines="0">${pane}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="20"/><cols>${columns}</cols><sheetData>${rows}</sheetData>${filter}${mergeCells}</worksheet>`;
+}
+function workbookStyles() {
+  return `<styleSheet xmlns="${sheetNamespace}">
+  <fonts count="3"><font><sz val="11"/><color rgb="FF1C231E"/><name val="Calibri"/></font><font><b/><sz val="12"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="12"/><color rgb="FF234936"/><name val="Calibri"/></font></fonts>
+  <fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF234936"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE6EEE5"/><bgColor indexed="64"/></patternFill></fill></fills>
+  <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+  <cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+    <xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
+  </cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+}
+function meetingWorkbook(meeting) {
+  const sheets = workbookSheets(meeting);
+  const paths = sheets.map((_,index) => `worksheets/sheet${index+1}.xml`);
+  const relationship = (id,type,target) =>
+    `<Relationship Id="rId${id}" Type="${officeRelationships}/${type}" Target="${target}"/>`;
+  const relationships = items => `<Relationships xmlns="${packageRelationships}">${items.join("")}</Relationships>`;
+  const types = [
+    ["workbook.xml","sheet.main"],
+    ["styles.xml","styles"],
+    ...paths.map(path => [path,"worksheet"])
+  ];
+  const overrides = types.map(([path,type]) => `<Override PartName="/xl/${path}" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.${type}+xml"/>`).join("");
+  const workbook = sheets.map((sheet,index) => `<sheet name="${xmlText(sheet.name)}" sheetId="${index+1}" r:id="rId${index+1}"/>`).join("");
+  return zipXml([
+    ["[Content_Types].xml",`<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${overrides}</Types>`],
+    ["_rels/.rels",relationships([relationship(1,"officeDocument","xl/workbook.xml")])],
+    ["xl/workbook.xml",`<workbook xmlns="${sheetNamespace}" xmlns:r="${officeRelationships}"><bookViews><workbookView activeTab="0"/></bookViews><sheets>${workbook}</sheets></workbook>`],
+    ["xl/_rels/workbook.xml.rels",relationships([...paths.map((path,index) => relationship(index+1,"worksheet",path)),relationship(paths.length+1,"styles","styles.xml")])],
+    ["xl/styles.xml",workbookStyles()],
+    ...sheets.map((sheet,index) => ["xl/"+paths[index],sheetXml(sheet)])
+  ]);
+}
+
+// XLSX packages use ZIP. Store these small XML parts directly for offline export.
+function zipXml(files) {
+  const encode = new TextEncoder();
+  const crcTable = Array.from({length:256},(_,value) => {
+    for (let bit=0;bit<8;bit++) value = (value >>> 1) ^ (value & 1 ? 0xEDB88320 : 0);
+    return value;
+  });
+  const localParts = [];
+  const centralParts = [];
+  let offset = 0;
+  let directorySize = 0;
+  for (const [path,xml] of files) {
+    const name = encode.encode(path);
+    const data = encode.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+xml);
+    let crc = 0xFFFFFFFF;
+    for (const byte of data) crc = (crc >>> 8) ^ crcTable[(crc ^ byte) & 255];
+    crc = (crc ^ 0xFFFFFFFF) >>> 0;
+    const local = new DataView(new ArrayBuffer(30));
+    local.setUint32(0,0x04034B50,true);
+    local.setUint16(4,20,true);
+    local.setUint16(12,33,true);
+    local.setUint32(14,crc,true);
+    local.setUint32(18,data.length,true);
+    local.setUint32(22,data.length,true);
+    local.setUint16(26,name.length,true);
+    const central = new DataView(new ArrayBuffer(46));
+    central.setUint32(0,0x02014B50,true);
+    central.setUint16(4,20,true);
+    central.setUint16(6,20,true);
+    central.setUint16(14,33,true);
+    central.setUint32(16,crc,true);
+    central.setUint32(20,data.length,true);
+    central.setUint32(24,data.length,true);
+    central.setUint16(28,name.length,true);
+    central.setUint32(42,offset,true);
+    localParts.push(local.buffer,name,data);
+    centralParts.push(central.buffer,name);
+    offset += 30 + name.length + data.length;
+    directorySize += 46 + name.length;
+  }
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0,0x06054B50,true);
+  end.setUint16(8,files.length,true);
+  end.setUint16(10,files.length,true);
+  end.setUint32(12,directorySize,true);
+  end.setUint32(16,offset,true);
+  return new Blob([...localParts,...centralParts,end.buffer],{type:xlsxMime});
+}
+function downloadFile(meeting,blob,extension,message) {
+  const safeTitle = titleOf(meeting).replace(/[<>:"/\\|?*\u0000-\u001f]/g,"-").slice(0,70);
+  const url = URL.createObjectURL(blob);
+  const link = node("a");
+  link.href = url;
+  link.download = "猛虎攻堅_" + safeTitle + (meeting.date ? "_"+meeting.date : "") + extension;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url),15000);
+  notify(message);
+}
+for (const [elementId,key] of [["meeting-title","title"],["meeting-date","date"],["meeting-time","time"],["notes","notes"]]) {
+  byId(elementId).addEventListener("input",event => {
+    current()[key] = event.target.value;
+    save();
+    if (key === "title" || key === "date") renderHistory();
+  });
+}
+for (const id of ["close-roster","cancel-roster"]) byId(id).addEventListener("click",() => byId("roster-dialog").close());
+function markDepartmentPresent(department) {
+  const people = current().people[department];
+  const unmarked = people.filter(person => person.status === "unmarked");
+  if (!unmarked.length) {
+    notify("此部門已完成點名");
+    return;
+  }
+  for (const person of unmarked) person.status = "present";
+  save();
+  renderAttendance();
+  byId("mark-present-" + department).focus();
+  notify(department + " 已將 " + unmarked.length + " 位未點名成員標為出席");
+}
+byId("new-meeting").addEventListener("click",() => {
+  const meeting = makeMeeting(state.roster);
+  state.meetings.unshift(meeting);
+  state.activeId = meeting.id;
+  departmentFilter = "";
+  save();
+  render();
+  window.scrollTo({top:0});
+  byId("meeting-title").focus();
+});
+byId("delete-meeting").addEventListener("click",() => confirmAction("刪除會議","將移除這場會議的點名、會議重點及 Action Items。","刪除會議",() => {
+  state.meetings = state.meetings.filter(meeting => meeting.id !== state.activeId);
+  if (!state.meetings.length) state.meetings.push(makeMeeting(state.roster));
+  state.activeId = state.meetings[0].id;
+  save();
+  render();
+  window.scrollTo({top:0});
+  byId("meeting-title").focus();
+}));
+byId("add-action").addEventListener("click",() => {
+  current().actions.push({id:uid(),topic:"",status:"open",task:"",owner:"",cp:""});
+  save();
+  renderActions();
+  byId("action-list").lastElementChild.querySelector("input").focus();
+});
+byId("download").addEventListener("click",() => {
+  const meeting = current();
+  const summary = new Blob([meetingSummary(meeting)],{type:"text/html;charset=utf-8"});
+  downloadFile(meeting,summary,".html","已產生 HTML 摘要");
+});
+byId("download-excel").addEventListener("click",() => {
+  const meeting = current();
+  downloadFile(meeting,meetingWorkbook(meeting),".xlsx","已產生 Excel 總覽");
+});
+for (const link of document.querySelectorAll(".nav a")) {
+  link.addEventListener("click",() => {
+    document.querySelector(".nav [aria-current]").removeAttribute("aria-current");
+    link.setAttribute("aria-current","location");
+  });
+}
+render();
+if (loadError) {
+  byId("save-state").textContent = "無法讀取原有紀錄";
+  byId("save-state").classList.add("error");
+}
+</script>
+</body>
+</html>
