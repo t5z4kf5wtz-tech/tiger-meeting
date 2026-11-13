@@ -621,11 +621,16 @@ function escapeHtml(value) {
 }
 function meetingActionRows(meeting) {
   return meeting.actions.flatMap((action,index) => {
-    const values = actionValues(action);
-    const cells = actionColumns.map(({key}) => key === "status" ? actionStates[action.status] : (values[key] ?? "").trim());
-    if (action.status === "open" && actionColumns.every(({key},column) => key === "status" || !cells[column])) return [];
+    const cells = recordedActionCells(action);
+    if (!cells) return [];
     return [[index+1,...cells]];
   });
+}
+function recordedActionCells(action) {
+  const values = actionValues(action);
+  const cells = actionColumns.map(({key}) => key === "status" ? actionStates[action.status] : (values[key] ?? "").trim());
+  const isEmpty = action.status === "open" && actionColumns.every(({key},index) => key === "status" || !cells[index]);
+  return isEmpty ? null : cells;
 }
 function meetingSummary(meeting) {
   const escape = escapeHtml;
@@ -854,7 +859,11 @@ function markDepartmentPresent(department) {
   notify(department + " 已將 " + unmarked.length + " 位未點名成員標為出席");
 }
 byId("new-meeting").addEventListener("click",() => {
+  const previousMeeting = state.meetings[0];
   const meeting = makeMeeting(state.roster);
+  meeting.actions = previousMeeting.actions
+    .filter(action => recordedActionCells(action))
+    .map(action => ({...action,id:uid()}));
   state.meetings.unshift(meeting);
   state.activeId = meeting.id;
   departmentFilter = "";
@@ -862,6 +871,7 @@ byId("new-meeting").addEventListener("click",() => {
   render();
   window.scrollTo({top:0});
   byId("meeting-title").focus();
+  if (meeting.actions.length) notify("已帶入上一場的 " + meeting.actions.length + " 筆 Action Items");
 });
 byId("delete-meeting").addEventListener("click",() => confirmAction("刪除會議","將移除這場會議的點名、會議重點及 Action Items。","刪除會議",() => {
   state.meetings = state.meetings.filter(meeting => meeting.id !== state.activeId);
