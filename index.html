@@ -104,9 +104,21 @@ h3{font-size:15px}
 .status[data-state=leave][aria-pressed=true]{background:#fff0d6;border-color:#ecd39f;color:#7b4a09}
 .status[data-state=absent][aria-pressed=true]{background:#fae8e5;border-color:#e5b9b1;color:#8a3027}
 textarea{resize:vertical;min-height:98px;display:block}
-.action-list{display:grid;gap:10px}
-.action{padding:13px;border:1px solid var(--line);border-radius:11px;background:#f7f8f5}
-.action-fields{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(82px,.85fr) minmax(0,2.45fr) minmax(0,1fr) minmax(0,1.2fr) auto;gap:9px;align-items:end}
+.action-list{max-width:100%;overflow:auto;scrollbar-gutter:stable}
+.action-table{border-collapse:separate;border-spacing:0;table-layout:fixed;width:100%;min-width:1080px;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.action-table th,.action-table td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:7px;vertical-align:top}
+.action-table th:last-child,.action-table td:last-child{border-right:0}
+.action-table tbody tr:last-child td{border-bottom:0}
+.action-table thead th{background:#d9e7f1;color:#1e3549;text-align:left;font-size:12px;white-space:nowrap}
+.action-table td{background:#fff}
+.action-table tbody tr:nth-child(even) td{background:#f8faf9}
+.action-table tbody td[data-field=due]{background:#fff1bc}
+.action-table th[data-field=due]{background:#f6e2a1;color:#4f421b}
+.action-table input,.action-table select,.action-table textarea{font-size:12px;padding:6px 7px;border-radius:5px}
+.action-table textarea{min-height:66px;field-sizing:content;overflow-wrap:anywhere}
+.action-table td:first-child,.action-table th:first-child,.action-table td:last-child{text-align:center}
+.action-table td:first-child{font-variant-numeric:tabular-nums;font-weight:650;padding-top:14px}
+.action-table .remove{width:27px;height:30px;font-size:16px}
 .remove{height:41px;width:36px;border:1px solid #e5dedb;border-radius:8px;background:white;color:#984538;font-size:19px}
 .remove:hover{background:#fae9e5}
 .danger-link{display:inline-block;color:#963b31;background:none;border:0;padding:7px 0;font-size:12px;text-decoration:underline;text-underline-offset:3px}
@@ -119,9 +131,8 @@ dialog::backdrop{background:#131c16a6}
 #bulk{min-height:73px}
 #toast{position:fixed;z-index:3;bottom:19px;right:19px;padding:11px 15px;background:#1f3528;color:#fff;border-radius:9px;box-shadow:0 5px 20px #2223}
 [hidden]{display:none!important}
-@media(max-width:1100px){.action-fields{grid-template-columns:repeat(3,minmax(0,1fr))}.action-fields .remove{justify-self:end}}
 @media(max-width:820px){.shell{grid-template-columns:1fr}.sidebar{position:static;height:auto;padding:15px 18px;display:grid;grid-template-columns:1fr auto;gap:8px}.brand{padding:0}.nav{display:none}.side-heading{margin:0;align-self:center;grid-row:1;grid-column:2}.history{grid-column:1/-1;display:flex}.history button{width:auto;max-width:190px;flex:none}.side-footer{grid-column:1/-1;margin:0;padding:0}.workspace{padding-top:19px}.hero::after{right:-50px;opacity:.38}}
-@media(max-width:520px){.workspace{padding:15px 11px 28px}.toolbar{margin-bottom:13px;flex-wrap:wrap}.hero{padding:23px 14px}.hero-fields{grid-template-columns:1fr 1fr}.hero-fields label:first-child{grid-column:1/-1}.summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:10px 0 16px}.metric{padding:9px;gap:8px}.panel{padding:14px}.person{align-items:flex-start;flex-direction:column;gap:6px}.action-fields{grid-template-columns:1fr 1fr}.action-fields label:nth-child(3){grid-column:1/-1}.action-fields .remove{justify-self:end}.roster-head{align-items:flex-start}.roster-head h3 span{display:block;margin-left:0}}
+@media(max-width:520px){.workspace{padding:15px 11px 28px}.toolbar{margin-bottom:13px;flex-wrap:wrap}.hero{padding:23px 14px}.hero-fields{grid-template-columns:1fr 1fr}.hero-fields label:first-child{grid-column:1/-1}.summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:10px 0 16px}.metric{padding:9px;gap:8px}.panel{padding:14px}.person{align-items:flex-start;flex-direction:column;gap:6px}.roster-head{align-items:flex-start}.roster-head h3 span{display:block;margin-left:0}}
 </style>
 </head>
 <body>
@@ -175,7 +186,7 @@ dialog::backdrop{background:#131c16a6}
       </section>
       <section class="panel" id="actions" aria-labelledby="actions-heading">
         <div class="section-head"><h2 id="actions-heading">Action Items</h2><button type="button" class="btn primary" id="add-action"><span class="icon" aria-hidden="true">＋</span>新增 Action</button></div>
-        <div class="action-list" id="action-list"></div>
+        <div class="action-list" id="action-list" role="region" aria-labelledby="actions-heading" tabindex="0"></div>
       </section>
       <button class="danger-link" type="button" id="delete-meeting">刪除這場會議</button>
     </div>
@@ -420,57 +431,98 @@ byId("roster-form").addEventListener("submit",event => {
   byId("edit-roster-" + department).focus();
   notify(department + " 名單已更新");
 });
-function field(label,control) {
-  const wrapper = node("label");
-  wrapper.append(node("span","",label),control);
-  return wrapper;
+const actionColumns = [
+  {label:"項目／來源",key:"topic",width:17,webWidth:"108px",placeholder:"會議或議題"},
+  {label:"Status",key:"status",width:14,webWidth:"91px"},
+  {label:"Action",key:"task",width:50,webWidth:"23%",multiline:true,placeholder:"待辦事項"},
+  {label:"Update",key:"update",width:44,webWidth:"20%",multiline:true,placeholder:"進度、結果或下一步"},
+  {label:"Due date",key:"due",width:15,webWidth:"132px"},
+  {label:"FX DRI",key:"fxDri",width:19,webWidth:"89px"},
+  {label:"F1 DRI",key:"f1Dri",width:19,webWidth:"89px"},
+  {label:"CP",key:"cp",width:19,webWidth:"91px",placeholder:"檢查節點"}
+];
+const actionHeaders = ["No.",...actionColumns.map(column => column.label)];
+function actionValues(action) {
+  const previousCP = action.cp ?? action.due ?? "";
+  const previousDate = /^\d{4}-\d{2}-\d{2}$/.test(previousCP) ? previousCP : "";
+  return {
+    ...action,
+    due:action.dueDate ?? previousDate,
+    cp:action.checkpoint ?? (previousDate ? "" : previousCP),
+    fxDri:action.fxDri ?? action.owner ?? ""
+  };
 }
-const checkpoint = action => action.cp ?? action.due ?? "";
 function renderActions() {
   const meeting = current();
   const list = byId("action-list");
   if (!meeting.actions.length) {
     const empty = node("div","empty");
-    empty.append(node("strong","","尚無 Action Item"),node("span","subtle","新增待辦事項並指定 DRI 與 CP。"));
+    empty.append(node("strong","","尚無 Action Item"));
     list.replaceChildren(empty);
     return;
   }
-  list.replaceChildren(...meeting.actions.map((action,index) => {
-    const row = node("div","action");
-    const fields = node("div","action-fields");
-    const textField = (label,key,placeholder,value = action[key] ?? "") => {
-      const input = node("input");
-      input.value = value;
-      input.placeholder = placeholder;
-      input.addEventListener("input",() => {action[key] = input.value;save();});
-      return field(label,input);
-    };
-    const select = node("select");
-    for (const [key,label] of Object.entries(actionStates)) {
-      const option = node("option","",label);
-      option.value = key;
-      select.append(option);
+  const table = node("table","action-table");
+  table.setAttribute("aria-label","Action Items 追蹤表");
+  const widths = node("colgroup");
+  for (const width of ["43px",...actionColumns.map(column => column.webWidth),"42px"]) {
+    const column = node("col");
+    column.style.width = width;
+    widths.append(column);
+  }
+  const head = node("thead");
+  const header = node("tr");
+  for (const [index,label] of [...actionHeaders,""].entries()) {
+    const heading = node("th","",label);
+    heading.scope = "col";
+    if (index > 0 && index <= actionColumns.length) heading.dataset.field = actionColumns[index-1].key;
+    if (!label) heading.setAttribute("aria-label","操作");
+    header.append(heading);
+  }
+  head.append(header);
+  const body = node("tbody");
+  body.append(...meeting.actions.map((action,index) => {
+    const number = index + 1;
+    const row = node("tr");
+    row.append(node("td","",number));
+    const values = actionValues(action);
+    for (const column of actionColumns) {
+      const {key,label,multiline,placeholder} = column;
+      const cell = node("td");
+      cell.dataset.field = key;
+      const control = node(key === "status" ? "select" : multiline ? "textarea" : "input");
+      if (key === "status") {
+        for (const [value,name] of Object.entries(actionStates)) {
+          const option = node("option","",name);
+          option.value = value;
+          control.append(option);
+        }
+      }
+      if (key === "due") control.type = "date";
+      if (placeholder) control.placeholder = placeholder;
+      control.value = values[key] ?? "";
+      control.setAttribute("aria-label",number + " · " + label);
+      const storageField = key === "due" ? "dueDate" : key === "cp" ? "checkpoint" : key;
+      control.addEventListener(key === "status" ? "change" : "input",() => {
+        action[storageField] = control.value;
+        save();
+      });
+      cell.append(control);
+      row.append(cell);
     }
-    select.value = action.status;
-    select.addEventListener("change",() => {action.status = select.value;save();});
     const remove = button("×","remove",() => confirmAction("刪除 Action Item","這項待辦會從此會議移除。","刪除",() => {
       meeting.actions = meeting.actions.filter(item => item.id !== action.id);
       save();
       renderActions();
       byId("add-action").focus();
     }));
-    remove.setAttribute("aria-label","刪除第 " + (index+1) + " 項待辦");
-    fields.append(
-      textField("項目","topic","如：Build Readiness"),
-      field("Status",select),
-      textField("Action item","task","如：確認物料到位日"),
-      textField("DRI","owner","負責人"),
-      textField("CP","cp","日期或檢查節點",checkpoint(action)),
-      remove
-    );
-    row.append(fields);
+    remove.setAttribute("aria-label","刪除第 " + number + " 項待辦");
+    const toolsCell = node("td");
+    toolsCell.append(remove);
+    row.append(toolsCell);
     return row;
   }));
+  table.append(widths,head,body);
+  list.replaceChildren(table);
 }
 function render() {
   const meeting = current();
@@ -496,13 +548,12 @@ function confirmAction(title,detail,label,action) {
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g,char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 }
-const actionHeaders = ["項目","Status","Action item","DRI","CP"];
 function meetingActionRows(meeting) {
-  return meeting.actions.flatMap(action => {
-    const fields = [(action.topic ?? "").trim(),action.task.trim(),action.owner.trim(),checkpoint(action).trim()];
-    if (!fields.some(Boolean) && action.status === "open") return [];
-    const [topic,task,owner,cp] = fields;
-    return [[topic,actionStates[action.status],task,owner,cp]];
+  return meeting.actions.flatMap((action,index) => {
+    const values = actionValues(action);
+    const cells = actionColumns.map(({key}) => key === "status" ? actionStates[action.status] : (values[key] ?? "").trim());
+    if (action.status === "open" && actionColumns.every(({key},column) => key === "status" || !cells[column])) return [];
+    return [[index+1,...cells]];
   });
 }
 function meetingSummary(meeting) {
@@ -519,7 +570,7 @@ function meetingSummary(meeting) {
     return '<tr><th scope="row">'+department+"</th>"+cells.join("")+"</tr>";
   }).join("");
   const actionRows = meetingActionRows(meeting).map(row =>
-    "<tr>"+row.map(value => "<td>"+escape(value || "—")+"</td>").join("")+"</tr>"
+    "<tr>"+row.map((value,index) => (index === 5 ? '<td class="due-cell">' : "<td>")+escape(value || "—")+"</td>").join("")+"</tr>"
   ).join("");
   return `<!doctype html>
 <html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -530,7 +581,7 @@ main{max-width:960px;margin:0 auto;padding:30px 16px 45px}header,section{padding
 header{background:#234936;color:#fff}h1{font-size:27px;margin:4px 0;overflow-wrap:anywhere}h2{font-size:18px;margin:0 0 10px}
 p{margin:4px 0}.notes{white-space:pre-wrap;overflow-wrap:anywhere}.table-wrap{overflow:auto}
 table{width:100%;border-collapse:collapse}th,td{text-align:left;vertical-align:top;border-bottom:1px solid #e3e8e2;padding:8px 10px;overflow-wrap:anywhere}
-thead{background:#e8efe7}th{white-space:nowrap}.print{float:right;border:1px solid #afc4b3;color:#fff;background:transparent;padding:6px 9px;border-radius:6px;cursor:pointer}
+thead{background:#e8efe7}th{white-space:nowrap}.action-summary th{background:#d9e7f1}.action-summary td{white-space:pre-wrap}.action-summary .due-cell{background:#fff1bc;white-space:nowrap}.print{float:right;border:1px solid #afc4b3;color:#fff;background:transparent;padding:6px 9px;border-radius:6px;cursor:pointer}
 @media print{body{background:#fff}.print{display:none}main{padding:0}section,header{break-inside:auto}tr{break-inside:avoid}header{color:#192820;background:#fff}.table-wrap{overflow:visible}}
 </style>
 <main>
@@ -538,7 +589,7 @@ thead{background:#e8efe7}th{white-space:nowrap}.print{float:right;border:1px sol
 <section><h2>出席紀錄</h2><p>應到 ${stats.total}　出席 ${stats.present}　請假 ${stats.leave}　缺席 ${stats.absent}　未點名 ${stats.unmarked}</p>
 <div class="table-wrap"><table><thead><tr><th>部門</th><th>出席</th><th>請假</th><th>缺席</th><th>未點名</th></tr></thead><tbody>${attendanceRows}</tbody></table></div></section>
 <section><h2>會議重點</h2><p class="notes">${escape(meeting.notes.trim() || "未填寫")}</p></section>
-<section><h2>Action Items</h2>${actionRows ? '<div class="table-wrap"><table><thead><tr>'+actionHeaders.map(label => '<th>'+label+'</th>').join('')+'</tr></thead><tbody>'+actionRows+"</tbody></table></div>" : "<p>無待辦事項</p>"}</section>
+<section><h2>Action Items</h2>${actionRows ? '<div class="table-wrap"><table class="action-summary"><thead><tr>'+actionHeaders.map(label => '<th>'+label+'</th>').join('')+'</tr></thead><tbody>'+actionRows+"</tbody></table></div>" : "<p>無待辦事項</p>"}</section>
 </main></html>`;
 }
 const sheetNamespace = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
@@ -578,7 +629,7 @@ function workbookSheets(meeting) {
   return [
     {name:"會議總覽",widths:[21,20,17,19,17,17],rows:overview},
     makeDetail("出席明細",["部門","姓名","出席狀態"],attendance,[17,34,20]),
-    makeDetail("Action Items",actionHeaders,actions,[25,15,60,22,25])
+    {...makeDetail("Action Items",actionHeaders,actions,[8,...actionColumns.map(column => column.width)]),dueColumn:5}
   ];
 }
 
@@ -597,9 +648,10 @@ function sheetXml(sheet) {
     if (merge) merges.push(`A${number}:${lastColumn}${number}`);
     const values = cells.map((value,column) => {
       const address = String.fromCharCode(65 + column) + number;
+      const cellStyle = style === 2 && column === sheet.dueColumn ? 4 : style;
       return typeof value === "number"
-        ? `<c r="${address}" s="${style}"><v>${value}</v></c>`
-        : `<c r="${address}" s="${style}" t="inlineStr"><is><t xml:space="preserve">${xmlText(value)}</t></is></c>`;
+        ? `<c r="${address}" s="${cellStyle}"><v>${value}</v></c>`
+        : `<c r="${address}" s="${cellStyle}" t="inlineStr"><is><t xml:space="preserve">${xmlText(value)}</t></is></c>`;
     }).join("");
     const lines = Math.max(1,...cells.map((value,column) => String(value).split("\n").reduce(
       (count,line) => count + Math.max(1,Math.ceil(textWidth(line)/(sheet.widths[column]-2))),0
@@ -616,13 +668,14 @@ function sheetXml(sheet) {
 function workbookStyles() {
   return `<styleSheet xmlns="${sheetNamespace}">
   <fonts count="3"><font><sz val="11"/><color rgb="FF1C231E"/><name val="Calibri"/></font><font><b/><sz val="12"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="12"/><color rgb="FF234936"/><name val="Calibri"/></font></fonts>
-  <fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF234936"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE6EEE5"/><bgColor indexed="64"/></patternFill></fill></fills>
+  <fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF234936"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE6EEE5"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF1BC"/><bgColor indexed="64"/></patternFill></fill></fills>
   <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
   <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-  <cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+  <cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
     <xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center"/></xf>
     <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
     <xf numFmtId="0" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="4" borderId="0" xfId="0" applyFill="1" applyAlignment="1"><alignment vertical="center"/></xf>
   </cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
 }
 function meetingWorkbook(meeting) {
@@ -749,10 +802,10 @@ byId("delete-meeting").addEventListener("click",() => confirmAction("刪除會�
   byId("meeting-title").focus();
 }));
 byId("add-action").addEventListener("click",() => {
-  current().actions.push({id:uid(),topic:"",status:"open",task:"",owner:"",cp:""});
+  current().actions.push({id:uid(),status:"open"});
   save();
   renderActions();
-  byId("action-list").lastElementChild.querySelector("input").focus();
+  byId("action-list").querySelector("tbody").lastElementChild.querySelector("input").focus();
 });
 byId("download").addEventListener("click",() => {
   const meeting = current();
