@@ -105,9 +105,8 @@ h3{font-size:15px}
 .status[data-state=absent][aria-pressed=true]{background:#fae8e5;border-color:#e5b9b1;color:#8a3027}
 textarea{resize:vertical;min-height:98px;display:block}
 .action-list{max-width:100%;overflow:auto;scrollbar-gutter:stable}
-.action-table{border-collapse:separate;border-spacing:0;table-layout:fixed;width:100%;min-width:calc(887px + var(--action-width,248px));border:1px solid var(--line);border-radius:9px;overflow:hidden}
-.action-table col[data-field=task]{width:var(--action-width,248px)}
-.action-table th[data-field=task]{position:relative;padding-right:20px}
+.action-table{border-collapse:separate;border-spacing:0;table-layout:fixed;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.action-table thead th{position:relative;padding-right:20px;overflow:hidden;text-overflow:ellipsis}
 .column-resize{position:absolute;inset:0 0 0 auto;width:17px;cursor:col-resize;touch-action:none}
 .column-resize::after{content:"";position:absolute;inset:7px 6px;border-inline:1px solid #56758c}
 .column-resize:hover,.column-resize:focus-visible{background:#b9d1e2}
@@ -437,49 +436,65 @@ byId("roster-form").addEventListener("submit",event => {
   notify(department + " 名單已更新");
 });
 const actionColumns = [
-  {label:"項目／來源",key:"topic",width:17,webWidth:"108px",placeholder:"會議或議題"},
-  {label:"Status",key:"status",width:14,webWidth:"91px"},
-  {label:"Action",key:"task",width:50,multiline:true,placeholder:"待辦事項"},
-  {label:"Update",key:"update",width:44,multiline:true,placeholder:"進度、結果或下一步"},
-  {label:"Due date",key:"due",width:15,webWidth:"132px"},
-  {label:"FX DRI",key:"fxDri",width:19,webWidth:"89px"},
-  {label:"F1 DRI",key:"f1Dri",width:19,webWidth:"89px"},
-  {label:"CP",key:"cp",width:19,webWidth:"91px",placeholder:"檢查節點"}
+  {label:"項目／來源",key:"topic",width:17,webWidth:108,placeholder:"會議或議題"},
+  {label:"Status",key:"status",width:14,webWidth:91},
+  {label:"Action",key:"task",width:50,webWidth:248,multiline:true,placeholder:"待辦事項"},
+  {label:"Update",key:"update",width:44,webWidth:202,multiline:true,placeholder:"進度、結果或下一步"},
+  {label:"Due date",key:"due",width:15,webWidth:132},
+  {label:"FX DRI",key:"fxDri",width:19,webWidth:89},
+  {label:"F1 DRI",key:"f1Dri",width:19,webWidth:89},
+  {label:"CP",key:"cp",width:19,webWidth:91,placeholder:"檢查節點"}
 ];
 const actionHeaders = ["No.",...actionColumns.map(column => column.label)];
-const actionWidthKey = "tiger-meeting-action-width";
-const actionWidthMin = 120;
-const actionWidthMax = 1600;
-let actionWidth = 248;
+const trackerColumns = [
+  {key:"number",label:"No.",webWidth:52},
+  ...actionColumns,
+  {key:"tools",label:"操作",webWidth:48}
+];
+const columnWidthsKey = "tiger-meeting-column-widths";
+const maxColumnWidth = 1600;
+const columnWidths = Object.fromEntries(trackerColumns.map(({key,webWidth}) => [key,webWidth]));
 try {
-  const savedWidth = Number(localStorage.getItem(actionWidthKey));
-  if (savedWidth >= actionWidthMin && savedWidth <= actionWidthMax) actionWidth = savedWidth;
+  const previousActionWidth = Number(localStorage.getItem("tiger-meeting-action-width"));
+  const saved = JSON.parse(localStorage.getItem(columnWidthsKey)) ?? {task:previousActionWidth};
+  for (const {key} of trackerColumns) {
+    if (Number.isFinite(saved[key]) && saved[key] >= minimumColumnWidth(key) && saved[key] <= maxColumnWidth) {
+      columnWidths[key] = saved[key];
+    }
+  }
 } catch {}
-function addActionResize(table,heading) {
+function minimumColumnWidth(key) {
+  if (key === "number" || key === "tools") return 48;
+  if (key === "due") return 126;
+  return 72;
+}
+function addColumnResize(table,heading,column,{key,label}) {
   const handle = node("span","column-resize");
+  const minimum = minimumColumnWidth(key);
   handle.tabIndex = 0;
-  handle.title = "拖曳或用左右方向鍵調整 Action 欄寬";
+  handle.title = "拖曳或用左右方向鍵調整 " + label + " 欄寬";
   handle.setAttribute("role","separator");
-  handle.setAttribute("aria-label","調整 Action 欄寬");
+  handle.setAttribute("aria-label","調整 " + label + " 欄寬");
   handle.setAttribute("aria-orientation","vertical");
-  handle.setAttribute("aria-valuemin",actionWidthMin);
-  handle.setAttribute("aria-valuemax",actionWidthMax);
+  handle.setAttribute("aria-valuemin",minimum);
+  handle.setAttribute("aria-valuemax",maxColumnWidth);
   function setWidth(width) {
-    actionWidth = Math.max(actionWidthMin,Math.min(actionWidthMax,Math.round(width)));
-    table.style.setProperty("--action-width",actionWidth + "px");
-    handle.setAttribute("aria-valuenow",actionWidth);
+    columnWidths[key] = Math.max(minimum,Math.min(maxColumnWidth,Math.round(width)));
+    column.style.width = columnWidths[key] + "px";
+    table.style.width = (Object.values(columnWidths).reduce((total,value) => total + value,2)) + "px";
+    handle.setAttribute("aria-valuenow",columnWidths[key]);
   }
   function saveWidth() {
-    try {localStorage.setItem(actionWidthKey,String(actionWidth));} catch {}
+    try {localStorage.setItem(columnWidthsKey,JSON.stringify(columnWidths));} catch {}
   }
-  setWidth(actionWidth);
+  setWidth(columnWidths[key]);
   let drag;
   handle.addEventListener("pointerdown",event => {
     if (!event.isPrimary || event.button !== 0) return;
     event.preventDefault();
     handle.focus({preventScroll:true});
     handle.setPointerCapture(event.pointerId);
-    drag = {id:event.pointerId,x:event.clientX,width:actionWidth};
+    drag = {id:event.pointerId,x:event.clientX,width:columnWidths[key]};
   });
   handle.addEventListener("pointermove",event => {
     if (drag?.id === event.pointerId) setWidth(drag.width + event.clientX - drag.x);
@@ -491,7 +506,8 @@ function addActionResize(table,heading) {
   });
   handle.addEventListener("keydown",event => {
     const step = event.shiftKey ? 50 : 10;
-    const next = {ArrowLeft:actionWidth-step,ArrowRight:actionWidth+step,Home:actionWidthMin,End:actionWidthMax};
+    const width = columnWidths[key];
+    const next = {ArrowLeft:width-step,ArrowRight:width+step,Home:minimum,End:maxColumnWidth};
     if (!Object.hasOwn(next,event.key)) return;
     event.preventDefault();
     setWidth(next[event.key]);
@@ -521,20 +537,16 @@ function renderActions() {
   const table = node("table","action-table");
   table.setAttribute("aria-label","Action Items 追蹤表");
   const widths = node("colgroup");
-  for (const {webWidth,key} of [{webWidth:"43px"},...actionColumns,{webWidth:"42px"}]) {
-    const column = node("col");
-    if (webWidth) column.style.width = webWidth;
-    if (key === "task") column.dataset.field = key;
-    widths.append(column);
-  }
   const head = node("thead");
   const header = node("tr");
-  for (const [index,label] of [...actionHeaders,""].entries()) {
-    const heading = node("th","",label);
+  for (const definition of trackerColumns) {
+    const column = node("col");
+    const heading = node("th","",definition.key === "tools" ? "" : definition.label);
     heading.scope = "col";
-    if (index > 0 && index <= actionColumns.length) heading.dataset.field = actionColumns[index-1].key;
-    if (heading.dataset.field === "task") addActionResize(table,heading);
-    if (!label) heading.setAttribute("aria-label","操作");
+    heading.dataset.field = definition.key;
+    if (definition.key === "tools") heading.setAttribute("aria-label",definition.label);
+    addColumnResize(table,heading,column,definition);
+    widths.append(column);
     header.append(heading);
   }
   head.append(header);
